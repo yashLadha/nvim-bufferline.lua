@@ -13,6 +13,7 @@ local tab_selected_highlight = '%#BufferLineTabSelected#'
 local suffix_highlight = '%#BufferLine#'
 local selected_highlight = '%#BufferLineSelected#'
 local selected_indicator_highlight = '%#BufferLineSelectedIndicator#'
+local inactive_indicator_highlight = '%#BufferLineInactiveIndicator#'
 local modified_highlight = '%#BufferLineModified#'
 local modified_inactive_highlight = '%#BufferLineModifiedInactive#'
 local modified_selected_highlight = '%#BufferLineModifiedSelected#'
@@ -210,10 +211,11 @@ local function render_buffer(buffer, diagnostic_count)
   local buf_highlight, modified_hl_to_use = get_buffer_highlight(buffer)
   local length
   local is_current = buffer:current()
+  local is_visible = buffer:visible()
 
   local component = buffer.icon..padding..buffer.filename..padding
   -- pad the non active buffer before the highlighting is applied
-  if not is_current then
+  if not is_current and not is_visible then
     component = padding .. component
   end
   -- string.len counts number of bytes and so the unicode icons are counted
@@ -222,12 +224,13 @@ local function render_buffer(buffer, diagnostic_count)
   length = strwidth(component)
   component = buf_highlight..make_clickable(component, buffer.id)
 
-  if is_current then
+  if is_current or is_visible then
     -- U+2590 ▐ Right half block, this character is right aligned so the
     -- background highlight doesn't appear in th middle
     -- alternatives:  right aligned => ▕ ▐ ,  left aligned => ▍
     local active_indicator = '▎'
-    local active_highlight = selected_indicator_highlight.. active_indicator .. '%*'
+    local hl = is_current and selected_indicator_highlight or inactive_indicator_highlight
+    local active_highlight = hl .. active_indicator .. '%*'
     length = length + strwidth(active_indicator)
     component = active_highlight .. component
   end
@@ -490,6 +493,10 @@ local function get_defaults()
       guifg = tabline_sel_bg,
       guibg = normal_bg,
     };
+    bufferline_inactive_indicator = {
+      guifg = comment_fg,
+      guibg = normal_bg,
+    };
     bufferline_selected = {
       guifg = normal_fg,
       guibg = normal_bg,
@@ -516,6 +523,7 @@ function M.setup(prefs)
     set_highlight('BufferLineBackground', highlights.bufferline_buffer)
     set_highlight('BufferLineSelected', highlights.bufferline_selected)
     set_highlight('BufferLineSelectedIndicator', highlights.bufferline_selected_indicator)
+    set_highlight('BufferLineInactiveIndicator', highlights.bufferline_inactive_indicator)
     set_highlight('BufferLineModified', highlights.bufferline_modified)
     set_highlight('BufferLineModifiedSelected', highlights.bufferline_modified_selected)
     set_highlight('BufferLineModifiedInactive', highlights.bufferline_modified_inactive)
