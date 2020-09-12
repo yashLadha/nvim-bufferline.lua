@@ -13,7 +13,7 @@ local strwidth = vim.fn.strwidth
 ---------------------------------------------------------------------------//
 -- Constants
 ---------------------------------------------------------------------------//
-local padding = " "
+local padding = ""
 
 local superscript_numbers = {
   [0] = '⁰',
@@ -225,7 +225,7 @@ local function render_buffer(preferences, buffer, diagnostic_count)
   local difference = options.tab_size - length
   if difference > 0 then
     local pad = string.rep(padding, math.floor((difference / 2)))
-    component = pad .. component .. pad
+    component = " " .. component .. " "
     length = length + strwidth(pad) * 2
   end
 
@@ -235,7 +235,7 @@ local function render_buffer(preferences, buffer, diagnostic_count)
       options.numbers,
       options.number_style
     )
-    local number_component = number_prefix .. padding
+    local number_component = number_prefix .. " "
     component = number_component  .. component
     length = length + strwidth(number_component)
   end
@@ -246,7 +246,7 @@ local function render_buffer(preferences, buffer, diagnostic_count)
     -- U+2590 ▐ Right half block, this character is right aligned so the
     -- background highlight doesn't appear in th middle
     -- alternatives:  right aligned => ▕ ▐ ,  left aligned => ▍
-    local indicator_symbol = '▎'
+    local indicator_symbol = ''
     local indicator = highlights.indicator .. indicator_symbol .. '%*'
 
     length = length + strwidth(indicator_symbol)
@@ -275,8 +275,10 @@ local function render_buffer(preferences, buffer, diagnostic_count)
   local separator_component
   if options.separator_style == 'thick' then
     separator_component = (is_visible or is_current) and "▌" or "▐"-- "▍" "░"
-  else
+  elseif options.separator_style == 'extra-think' then
     separator_component = (is_visible or is_current) and "▏" or "▕"
+  else
+    separator_component = ''
   end
 
   local separator = highlights.separator..separator_component
@@ -313,9 +315,8 @@ end
 
 local function render_tab(tab, is_active)
   local hl = is_active and highlights.tab_selected or highlights.tab
-  local name = padding..tab.tabnr..padding
-  local length = strwidth(name)
-  return hl .. tab_click_component(tab.tabnr) .. name, length
+  local length = 1
+  return hl, length
 end
 
 local function get_tabs()
@@ -477,7 +478,7 @@ local function render(buffers, tabs, close_icon)
     line = line..highlights.background..icon
   end
 
-  return line..highlights.fill..right_align..tab_components..highlights.close..close_component
+  return line..highlights.fill..right_align..tab_components
 end
 
 --- @param bufs table | nil
@@ -584,15 +585,15 @@ local function get_defaults()
 
   return {
     options = {
-      view = "default",
+      view = "multiwindow",
       numbers = "none",
       number_style = "superscript",
-      close_icon = "",
+      close_icon = "",
       separator_style = 'thin',
       tab_size = 18,
       max_name_length = 18,
       mappings = false,
-      show_buffer_close_icons = true,
+      show_buffer_close_icons = false,
       enforce_regular_tabs = false,
     };
     highlights = {
